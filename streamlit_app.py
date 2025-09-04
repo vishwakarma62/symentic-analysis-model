@@ -155,22 +155,31 @@ def main():
                     predictions, confidence = analyzer.predict_with_confidence(df['text'])
                     df['ml_sentiment'] = predictions
                     df['ml_confidence'] = confidence
-                    df['textblob_sentiment'] = df['text'].apply(
-                        lambda x: TextBlob(x).sentiment.polarity
-                    )
+                    
+                    # Convert TextBlob polarity to sentiment labels
+                    def get_textblob_sentiment(text):
+                        polarity = TextBlob(text).sentiment.polarity
+                        if polarity > 0.1:
+                            return "positive"
+                        elif polarity < -0.1:
+                            return "negative"
+                        else:
+                            return "neutral"
+                    
+                    df['textblob_sentiment'] = df['text'].apply(get_textblob_sentiment)
                     
                     # Display results
                     st.subheader("Batch Analysis Results")
                     st.dataframe(df)
                     
                     # Visualization
-                    sentiment_comparison = pd.DataFrame({
-                        'ML Model': df['ml_sentiment'].value_counts(),
-                        'TextBlob': df['textblob_sentiment'].value_counts()
-                    }).fillna(0)
+                    ml_counts = df['ml_sentiment'].value_counts()
+                    tb_counts = df['textblob_sentiment'].value_counts()
                     
                     fig_comparison = px.bar(
-                        sentiment_comparison,
+                        x=list(ml_counts.index) + list(tb_counts.index),
+                        y=list(ml_counts.values) + list(tb_counts.values),
+                        color=['ML Model'] * len(ml_counts) + ['TextBlob'] * len(tb_counts),
                         title="Sentiment Analysis Comparison",
                         barmode='group'
                     )
