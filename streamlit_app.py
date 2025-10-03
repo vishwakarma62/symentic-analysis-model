@@ -119,13 +119,13 @@ def main():
                         'Neutral': '#ffff00'
                     }
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
             else:
                 st.warning("Please enter some text to analyze!")
     
     with col2:
         st.header("Sample Data")
-        st.dataframe(sample_df, use_container_width=True)
+        st.dataframe(sample_df, width='stretch')
         
         # Sentiment distribution
         sentiment_counts = sample_df['sentiment'].value_counts()
@@ -134,43 +134,69 @@ def main():
             names=sentiment_counts.index,
             title="Training Data Distribution"
         )
-        st.plotly_chart(fig_pie, use_container_width=True)
+        st.plotly_chart(fig_pie, width='stretch')
     
     # Batch analysis section
     st.header("Batch Analysis")
     
     uploaded_file = st.file_uploader(
-        "Upload a CSV file with a 'text' column",
+        "Upload any CSV file - we'll auto-detect text columns",
         type=['csv']
     )
     
     if uploaded_file is not None:
         try:
             df = pd.read_csv(uploaded_file)
-            if 'text' in df.columns:
-                st.success(f"File uploaded successfully! {len(df)} rows found.")
+            st.success(f"File uploaded successfully! {len(df)} rows found.")
+            
+            # Auto-detect text columns
+            text_columns = []
+            for col in df.columns:
+                if df[col].dtype == 'object':  # String columns
+                    # Check if column contains meaningful text (more than 10 chars on average)
+                    avg_length = df[col].astype(str).str.len().mean()
+                    if avg_length > 10:
+                        text_columns.append(col)
+            
+            if text_columns:
+                # Let user select which column to analyze
+                selected_column = st.selectbox(
+                    "Select text column to analyze:",
+                    text_columns,
+                    index=0
+                )
                 
-                if st.button("Analyze All Texts"):
+                # Show preview
+                st.subheader("Data Preview")
+                st.dataframe(df.head(), width='stretch')
+                
+                if st.button("Analyze Selected Column"):
+                    # Clean and prepare text data
+                    texts = df[selected_column].astype(str).fillna("")
+                    
                     # Analyze all texts
-                    predictions, confidence = analyzer.predict_with_confidence(df['text'])
+                    predictions, confidence = analyzer.predict_with_confidence(texts)
                     df['ml_sentiment'] = predictions
                     df['ml_confidence'] = confidence
                     
                     # Convert TextBlob polarity to sentiment labels
                     def get_textblob_sentiment(text):
-                        polarity = TextBlob(text).sentiment.polarity
-                        if polarity > 0.1:
-                            return "positive"
-                        elif polarity < -0.1:
-                            return "negative"
-                        else:
+                        try:
+                            polarity = TextBlob(str(text)).sentiment.polarity
+                            if polarity > 0.1:
+                                return "positive"
+                            elif polarity < -0.1:
+                                return "negative"
+                            else:
+                                return "neutral"
+                        except:
                             return "neutral"
                     
-                    df['textblob_sentiment'] = df['text'].apply(get_textblob_sentiment)
+                    df['textblob_sentiment'] = texts.apply(get_textblob_sentiment)
                     
                     # Display results
                     st.subheader("Batch Analysis Results")
-                    st.dataframe(df)
+                    st.dataframe(df, width='stretch')
                     
                     # Visualization
                     ml_counts = df['ml_sentiment'].value_counts()
@@ -183,9 +209,12 @@ def main():
                         title="Sentiment Analysis Comparison",
                         barmode='group'
                     )
-                    st.plotly_chart(fig_comparison, use_container_width=True)
+                    st.plotly_chart(fig_comparison, width='stretch')
             else:
-                st.error("CSV file must contain a 'text' column!")
+                st.warning("No suitable text columns found. Upload a file with text data (names, descriptions, comments, etc.)")
+                st.subheader("Available Columns")
+                st.write(list(df.columns))
+                
         except Exception as e:
             st.error(f"Error reading file: {str(e)}")
     
