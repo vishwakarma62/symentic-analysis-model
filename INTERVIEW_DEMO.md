@@ -1,19 +1,19 @@
-# Interview Demo Guide - Sentiment Analysis Project
+# Business Demo Guide - Sentiment Analysis Platform
 
-## 1. Project Overview (2 minutes)
-**What I Built:**
-- End-to-end sentiment analysis system
-- Multiple ML models with automatic best selection
-- Web dashboard for real-time analysis
-- REST API for integration
-- Business-focused insights
+## 1. Platform Overview
+**What This Platform Offers:**
+- Professional sentiment analysis for businesses
+- Multiple ML models with automatic optimization
+- Real-time dashboard for monitoring
+- REST API for system integration
+- Actionable business insights
 
 **Technologies Used:**
 - Python, Scikit-learn, Streamlit, Flask
 - 4 ML algorithms: Logistic Regression, Random Forest, SVM, Naive Bayes
 - Advanced text preprocessing with TextBlob
 
-## 2. Live Demo Flow (5-7 minutes)
+## 2. Platform Demo Flow
 
 ### Step 1: Show the Dashboard
 ```bash

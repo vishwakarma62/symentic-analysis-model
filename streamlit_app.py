@@ -43,18 +43,28 @@ def main():
     # Load model first
     analyzer, sample_df = load_model()
     
-    st.title("Sentiment Analysis Dashboard")
-    st.markdown("### Analyze text sentiment using Machine Learning")
-    st.warning("⚠️ Development Version - Not for Production Use")
+    st.title("📊 Business Sentiment Intelligence")
+    st.markdown("### Professional sentiment analysis for customer feedback, reviews, and social media monitoring")
+    st.info("🚀 Professional Sentiment Analysis Platform - Ready for Business Use")
     
     # Sidebar
     st.sidebar.header("Features")
     st.sidebar.info("""
-    - Text preprocessing and cleaning
-    - Machine Learning classification
-    - Natural Language Processing
-    - Data visualization
-    - Interactive web application
+    🏢 **Business Applications:**
+    - Customer review analysis
+    - Social media monitoring
+    - Support ticket prioritization
+    - Brand sentiment tracking
+    - Market research insights
+    """)
+    
+    st.sidebar.success("""
+    🚀 **Platform Features:**
+    - Real-time analysis
+    - Batch processing
+    - API integration
+    - Confidence scoring
+    - Multi-model comparison
     """)
     
     # Main content
