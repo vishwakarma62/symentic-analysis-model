@@ -4,6 +4,13 @@ import plotly.express as px
 from textblob import TextBlob
 from advanced_sentiment_analyzer import AdvancedSentimentAnalyzer, create_enhanced_dataset
 
+# Setup NLTK data on startup
+try:
+    from nltk_setup import setup_nltk
+    setup_nltk()
+except Exception as e:
+    st.error(f"NLTK setup failed: {e}")
+
 # Change this line:
 # from advanced_sentiment_analyzer import AdvancedSentimentAnalyzer, create_enhanced_dataset
 
@@ -58,14 +65,7 @@ def main():
     - Market research insights
     """)
     
-    st.sidebar.success("""
-    🚀 **Platform Features:**
-    - Real-time analysis
-    - Batch processing
-    - API integration
-    - Confidence scoring
-    - Multi-model comparison
-    """)
+
     
     # Main content
     col1, col2 = st.columns([2, 1])
