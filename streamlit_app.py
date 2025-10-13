@@ -1,13 +1,10 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
 import numpy as np
 
-# Simple sentiment analyzer without TextBlob
 class SimpleSentimentAnalyzer:
     def __init__(self):
         self.vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
@@ -38,7 +35,6 @@ class SimpleSentimentAnalyzer:
 
 @st.cache_resource
 def load_model():
-    # Simple training data
     texts = [
         "I love this product! Amazing quality!",
         "Great service and fast delivery!",
@@ -65,8 +61,7 @@ def load_model():
     df = pd.DataFrame({'text': texts, 'sentiment': labels})
     return analyzer, df
 
-def simple_textblob_sentiment(text):
-    # Simple rule-based sentiment without TextBlob
+def simple_sentiment(text):
     positive_words = ['good', 'great', 'excellent', 'amazing', 'love', 'perfect', 'outstanding', 'fantastic']
     negative_words = ['bad', 'terrible', 'awful', 'horrible', 'hate', 'worst', 'poor', 'disappointing']
     
@@ -94,7 +89,6 @@ def main():
     st.markdown("### Professional sentiment analysis for customer feedback and reviews")
     st.info("🚀 Professional Sentiment Analysis Platform - Ready for Business Use")
     
-    # Sidebar
     st.sidebar.header("Features")
     st.sidebar.info("""
     🏢 **Business Applications:**
@@ -105,7 +99,6 @@ def main():
     - Market research insights
     """)
 
-    # Main content
     col1, col2 = st.columns([2, 1])
     
     with col1:
@@ -119,19 +112,15 @@ def main():
         
         if st.button("Analyze Sentiment", type="primary"):
             if user_text:
-                # Simple rule-based analysis
-                simple_sentiment, simple_polarity = simple_textblob_sentiment(user_text)
-                
-                # ML Model Analysis
+                simple_sentiment_result, simple_polarity = simple_sentiment(user_text)
                 ml_predictions, ml_confidence = analyzer.predict([user_text])
                 ml_sentiment = ml_predictions[0].title()
                 
-                # Display Results
                 st.subheader("Analysis Results")
                 result_col1, result_col2, result_col3 = st.columns(3)
                 
                 with result_col1:
-                    st.metric("Rule-Based Sentiment", simple_sentiment)
+                    st.metric("Rule-Based Sentiment", simple_sentiment_result)
                     st.metric("Polarity Score", f"{simple_polarity:.3f}")
                 
                 with result_col2:
@@ -139,21 +128,6 @@ def main():
                 
                 with result_col3:
                     st.metric("ML Confidence", f"{ml_confidence[0]:.1%}")
-                
-                # Visualization
-                fig = px.bar(
-                    x=[simple_sentiment, ml_sentiment],
-                    y=["Rule-Based", "ML Model"],
-                    orientation='h',
-                    title="Sentiment Comparison",
-                    color=[simple_sentiment, ml_sentiment],
-                    color_discrete_map={
-                        'Positive': '#00ff00',
-                        'Negative': '#ff0000',
-                        'Neutral': '#ffff00'
-                    }
-                )
-                st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("Please enter some text to analyze!")
     
@@ -161,16 +135,9 @@ def main():
         st.header("Sample Data")
         st.dataframe(sample_df, use_container_width=True)
         
-        # Sentiment distribution
         sentiment_counts = sample_df['sentiment'].value_counts()
-        fig_pie = px.pie(
-            values=sentiment_counts.values,
-            names=sentiment_counts.index,
-            title="Training Data Distribution"
-        )
-        st.plotly_chart(fig_pie, use_container_width=True)
+        st.bar_chart(sentiment_counts)
     
-    # Batch Analysis
     st.header("Batch Analysis")
     
     uploaded_file = st.file_uploader(
@@ -183,7 +150,6 @@ def main():
             df = pd.read_csv(uploaded_file)
             st.success(f"File uploaded successfully! {len(df)} rows found.")
             
-            # Auto-detect text columns
             text_columns = []
             for col in df.columns:
                 if df[col].dtype == 'object':
@@ -204,15 +170,13 @@ def main():
                 if st.button("Analyze Selected Column"):
                     texts = df[selected_column].astype(str).fillna("")
                     
-                    # ML model analysis
                     predictions, confidence = analyzer.predict(texts)
                     df['ml_sentiment'] = predictions
                     df['ml_confidence'] = confidence
                     
-                    # Rule-based analysis
                     rule_sentiments = []
                     for text in texts:
-                        sentiment, _ = simple_textblob_sentiment(text)
+                        sentiment, _ = simple_sentiment(text)
                         rule_sentiments.append(sentiment.lower())
                     
                     df['rule_sentiment'] = rule_sentiments
@@ -220,22 +184,11 @@ def main():
                     st.subheader("Batch Analysis Results")
                     st.dataframe(df, use_container_width=True)
                     
-                    # Visualization
                     ml_counts = df['ml_sentiment'].value_counts()
-                    rule_counts = df['rule_sentiment'].value_counts()
-                    
-                    fig_comparison = px.bar(
-                        x=list(ml_counts.index) + list(rule_counts.index),
-                        y=list(ml_counts.values) + list(rule_counts.values),
-                        color=['ML Model'] * len(ml_counts) + ['Rule-Based'] * len(rule_counts),
-                        title="Sentiment Analysis Comparison",
-                        barmode='group'
-                    )
-                    st.plotly_chart(fig_comparison, use_container_width=True)
+                    st.bar_chart(ml_counts)
             else:
                 st.warning("No suitable text columns found.")
-                st.subheader("Available Columns")
-                st.write(list(df.columns))
+                st.write("Available columns:", list(df.columns))
                 
         except Exception as e:
             st.error(f"Error reading file: {str(e)}")
