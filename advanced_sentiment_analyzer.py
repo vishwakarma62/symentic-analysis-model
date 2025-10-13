@@ -18,7 +18,12 @@ try:
 except:
     pass
 
-from textblob import TextBlob
+# TextBlob import with error handling
+try:
+    from textblob import TextBlob
+except ImportError:
+    print("TextBlob not available, using fallback")
+    TextBlob = None
 from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -51,7 +56,7 @@ class AdvancedSentimentAnalyzer:
         self.model_performance = {}
         
     def advanced_preprocess(self, text):
-        """Advanced text preprocessing"""
+        """Advanced text preprocessing with fallback"""
         if pd.isna(text):
             return ""
         
@@ -65,9 +70,17 @@ class AdvancedSentimentAnalyzer:
         # Remove extra whitespace
         text = ' '.join(text.split())
         
-        # Lemmatization
-        blob = TextBlob(text)
-        return ' '.join([word.lemmatize() for word in blob.words])
+        # Lemmatization with fallback
+        try:
+            if TextBlob is not None:
+                blob = TextBlob(text)
+                return ' '.join([word.lemmatize() for word in blob.words])
+            else:
+                return text
+        except Exception as e:
+            print(f"TextBlob lemmatization failed: {e}")
+            # Fallback: return cleaned text without lemmatization
+            return text
     
     def train_and_compare_models(self, texts, labels):
         """Train multiple models and compare performance"""
