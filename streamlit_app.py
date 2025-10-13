@@ -2,20 +2,48 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from textblob import TextBlob
+
+# =====================================================
+# 🔧 NLTK + TextBlob Setup (Fix MissingCorpusError)
+# =====================================================
+import nltk
+from textblob import download_corpora
+
+def setup_nltk():
+    """Ensure all required NLTK and TextBlob corpora are available."""
+    try:
+        nltk.data.find('tokenizers/punkt')
+    except LookupError:
+        nltk.download('punkt')
+
+    try:
+        nltk.data.find('corpora/wordnet')
+    except LookupError:
+        nltk.download('wordnet')
+
+    try:
+        nltk.data.find('taggers/averaged_perceptron_tagger')
+    except LookupError:
+        nltk.download('averaged_perceptron_tagger')
+
+    try:
+        nltk.data.find('corpora/omw-1.4')
+    except LookupError:
+        nltk.download('omw-1.4')
+
+    # Fallback: TextBlob built-in corpora
+    try:
+        download_corpora()
+    except Exception:
+        pass
+
+# Run setup on startup
+setup_nltk()
+
+# =====================================================
+# Import your model utilities
+# =====================================================
 from advanced_sentiment_analyzer import AdvancedSentimentAnalyzer, create_enhanced_dataset
-
-# Setup NLTK data on startup
-try:
-    from nltk_setup import setup_nltk
-    setup_nltk()
-except Exception as e:
-    st.error(f"NLTK setup failed: {e}")
-
-# Change this line:
-# from advanced_sentiment_analyzer import AdvancedSentimentAnalyzer, create_enhanced_dataset
-
-# To this:
-# from sentiment_analyzer import SentimentAnalyzer, create_sample_data
 
 st.set_page_config(
     page_title="AI Sentiment Analyzer",
@@ -24,20 +52,9 @@ st.set_page_config(
 )
 
 
-# # Change this:
-# def load_model():
-#     df = create_enhanced_dataset()
-#     analyzer = AdvancedSentimentAnalyzer()
-#     analyzer.train_and_compare_models(df['text'], df['sentiment'])
-#     return analyzer, df
-
-# # To this:
-# def load_model():
-#     df = create_sample_data()
-#     analyzer = SentimentAnalyzer()
-#     analyzer.train_model(df['text'], df['sentiment'])
-#     return analyzer, df
-
+# =====================================================
+# Model Loader
+# =====================================================
 @st.cache_data
 def load_model():
     """Load and train the sentiment analysis model"""
@@ -46,6 +63,10 @@ def load_model():
     analyzer.train_and_compare_models(df['text'], df['sentiment'])
     return analyzer, df
 
+
+# =====================================================
+# Main Application
+# =====================================================
 def main():
     # Load model first
     analyzer, sample_df = load_model()
@@ -58,15 +79,13 @@ def main():
     st.sidebar.header("Features")
     st.sidebar.info("""
     🏢 **Business Applications:**
-    - Customer review analysis
-    - Social media monitoring
-    - Support ticket prioritization
-    - Brand sentiment tracking
+    - Customer review analysis  
+    - Social media monitoring  
+    - Support ticket prioritization  
+    - Brand sentiment tracking  
     - Market research insights
     """)
-    
 
-    
     # Main content
     col1, col2 = st.columns([2, 1])
     
@@ -82,27 +101,21 @@ def main():
         
         if st.button("Analyze Sentiment", type="primary"):
             if user_text:
-                # TextBlob analysis
+                # --- TextBlob Analysis ---
                 blob = TextBlob(user_text)
                 textblob_polarity = blob.sentiment.polarity
-                textblob_sentiment = "Positive" if textblob_polarity > 0.1 else "Negative" if textblob_polarity < -0.1 else "Neutral"
-                
-# # Change this:
-# ml_predictions, ml_confidence = analyzer.predict_with_confidence([user_text])
-# ml_sentiment = ml_predictions[0].title()
+                textblob_sentiment = (
+                    "Positive" if textblob_polarity > 0.1 
+                    else "Negative" if textblob_polarity < -0.1 
+                    else "Neutral"
+                )
 
-# # To this:
-# ml_sentiment = analyzer.predict([user_text])[0].title()
-
-                
-
-                # ML Model analysis
+                # --- ML Model Analysis ---
                 ml_predictions, ml_confidence = analyzer.predict_with_confidence([user_text])
                 ml_sentiment = ml_predictions[0].title()
                 
-                # Display results
+                # --- Display Results ---
                 st.subheader("Analysis Results")
-                
                 result_col1, result_col2, result_col3 = st.columns(3)
                 
                 with result_col1:
@@ -116,7 +129,7 @@ def main():
                     st.metric("ML Confidence", f"{ml_confidence[0]:.1%}")
                     st.metric("TextBlob Polarity", f"{textblob_polarity:.3f}")
                 
-                # Sentiment gauge
+                # --- Visualization ---
                 fig = px.bar(
                     x=[textblob_sentiment, ml_sentiment],
                     y=["TextBlob", "ML Model"],
@@ -129,13 +142,13 @@ def main():
                         'Neutral': '#ffff00'
                     }
                 )
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("Please enter some text to analyze!")
     
     with col2:
         st.header("Sample Data")
-        st.dataframe(sample_df, width='stretch')
+        st.dataframe(sample_df, use_container_width=True)
         
         # Sentiment distribution
         sentiment_counts = sample_df['sentiment'].value_counts()
@@ -144,9 +157,11 @@ def main():
             names=sentiment_counts.index,
             title="Training Data Distribution"
         )
-        st.plotly_chart(fig_pie, width='stretch')
+        st.plotly_chart(fig_pie, use_container_width=True)
     
-    # Batch analysis section
+    # =====================================================
+    # Batch Analysis
+    # =====================================================
     st.header("Batch Analysis")
     
     uploaded_file = st.file_uploader(
@@ -162,34 +177,30 @@ def main():
             # Auto-detect text columns
             text_columns = []
             for col in df.columns:
-                if df[col].dtype == 'object':  # String columns
-                    # Check if column contains meaningful text (more than 10 chars on average)
+                if df[col].dtype == 'object':
                     avg_length = df[col].astype(str).str.len().mean()
                     if avg_length > 10:
                         text_columns.append(col)
             
             if text_columns:
-                # Let user select which column to analyze
                 selected_column = st.selectbox(
                     "Select text column to analyze:",
                     text_columns,
                     index=0
                 )
                 
-                # Show preview
                 st.subheader("Data Preview")
-                st.dataframe(df.head(), width='stretch')
+                st.dataframe(df.head(), use_container_width=True)
                 
                 if st.button("Analyze Selected Column"):
-                    # Clean and prepare text data
                     texts = df[selected_column].astype(str).fillna("")
                     
-                    # Analyze all texts
+                    # ML model analysis
                     predictions, confidence = analyzer.predict_with_confidence(texts)
                     df['ml_sentiment'] = predictions
                     df['ml_confidence'] = confidence
                     
-                    # Convert TextBlob polarity to sentiment labels
+                    # TextBlob analysis
                     def get_textblob_sentiment(text):
                         try:
                             polarity = TextBlob(str(text)).sentiment.polarity
@@ -204,9 +215,8 @@ def main():
                     
                     df['textblob_sentiment'] = texts.apply(get_textblob_sentiment)
                     
-                    # Display results
                     st.subheader("Batch Analysis Results")
-                    st.dataframe(df, width='stretch')
+                    st.dataframe(df, use_container_width=True)
                     
                     # Visualization
                     ml_counts = df['ml_sentiment'].value_counts()
@@ -219,9 +229,9 @@ def main():
                         title="Sentiment Analysis Comparison",
                         barmode='group'
                     )
-                    st.plotly_chart(fig_comparison, width='stretch')
+                    st.plotly_chart(fig_comparison, use_container_width=True)
             else:
-                st.warning("No suitable text columns found. Upload a file with text data (names, descriptions, comments, etc.)")
+                st.warning("No suitable text columns found. Upload a file with text data (comments, reviews, etc.)")
                 st.subheader("Available Columns")
                 st.write(list(df.columns))
                 
@@ -229,6 +239,8 @@ def main():
             st.error(f"Error reading file: {str(e)}")
     
 
-
+# =====================================================
+# Entry Point
+# =====================================================
 if __name__ == "__main__":
     main()
