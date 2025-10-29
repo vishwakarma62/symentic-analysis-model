@@ -7,7 +7,7 @@ import numpy as np
 
 class SimpleSentimentAnalyzer:
     def __init__(self):
-        self.vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
+        self.vectorizer = TfidfVectorizer(max_features=01000, stop_words='english')
         self.model = LogisticRegression()
         self.is_trained = False
     
